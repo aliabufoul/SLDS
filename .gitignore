@@ -1,6 +1,16 @@
 *MDC*
 .ipynb_checkpoints
 Untitled.ipynb
+
 !simulator-MDC_ECG_ELEC_POTL_II-500.csv
 !simulator-MDC_PRESS_BLD_ART_ABP-125.csv
 !simulator-MDC_RESP-62.5.csv
+
+!268269-2427-MDC_ECG_ELEC_POTL_II-500.csv
+!268269-2427-MDC_PRESS_BLD_ART_ABP-125.csv
+!268269-2427-MDC_RESP-62.5.csv
+
+Z-presentation-processing-graphs.ipynb
+Z-learning-models-algorithm.ipynb
+verification.ipynb
+simulator-regression-example.ipynb
