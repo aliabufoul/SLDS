@@ -5,8 +5,8 @@ A function for simulating a patient data. It's output is the following CSV files
 * simulator-MDC_PRESS_BLD_ART_ABP-125  
 * simulator-MDC_RESP-62.5
 
-## regression-example.ipynb
-A script for showing the results of the regression process (model training and then testing it) on both a simlated & real data. 
+## splitting-by-models.ipynb
+A set of function to detect the different models for a given period. 
 
 ## linear-regression.ipynb
 A set of functions used for regression.  
