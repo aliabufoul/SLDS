@@ -12,7 +12,7 @@ A set of functions used for regression.
 A set of functions to fetch the data from the dataset and to perform a preprocessing on it.
 
 ## samples directory
-Includes the dataset as CSV fies for real & simulated patients.
+Includes the dataset as CSV fies for real patients.
 
 ## signals-processing-results.ipynb
 A script for printing the results of the preprocessing on signals.  
