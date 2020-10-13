@@ -297,17 +297,20 @@ def bp(start, end, patient_id, print1, print2):
         return time[(int)(start * F):(int)(end * F)], bp[(int)(start * F):(int)(end * F)]
 
 
-def simulator():
+def simulator(enableSignle_mu, enableProportionalNoise):
     for file in os.listdir("./pickles"):
         if file.find("simulator"):
             os.remove("pickles/" +file)
 
+    if enableProportionalNoise:
+        noiseProp = 0.01
 
     # build a list of 3 random models
     Simulator_Model = namedtuple('Simulator_Model', ['id', 'T', 'D'])
     models = []
 
-    #mu = np.array([[np.random.uniform(80, 100)], [np.random.uniform(90, 110)], [np.random.uniform(20, 35)]])
+    if enableSignle_mu:
+        mu = np.array([[np.random.uniform(80, 100)], [np.random.uniform(90, 110)], [np.random.uniform(20, 35)]])
 
     for j in range(3):
         A = np.random.randn(3, 3)
@@ -316,7 +319,8 @@ def simulator():
         delta_ = np.random.uniform(1.01 ,1.1)
         A = A/ (delta_ * lambda_)
 
-        mu = np.array([[np.random.uniform(80, 100)], [np.random.uniform(90, 110)], [np.random.uniform(20, 35)]])
+        if not enableSignle_mu:
+            mu = np.array([[np.random.uniform(80, 100)], [np.random.uniform(90, 110)], [np.random.uniform(20, 35)]])
 
         model = Simulator_Model(j, A, mu)
         models.append(model)
@@ -346,8 +350,10 @@ def simulator():
         print("")
 
         for i in range(length):
-            #s_n = np.dot(model.T, s_n) + np.multiply(0.01*model.D, np.random.randn(3, 1))
-            s_n = np.dot(model.T, s_n) + np.random.randn(3, 1)
+            if enableProportionalNoise:
+                s_n = np.dot(model.T, s_n) + np.multiply(noiseProp*model.D, np.random.randn(3, 1))
+            else:
+                s_n = np.dot(model.T, s_n) + np.random.randn(3, 1)
             x_n = s_n + model.D
             hr.append(x_n[0])
             bp.append(x_n[1])
@@ -429,15 +435,14 @@ def models_periods_table(start, end, patient_id):
         for j in range(len(periods)):
             prediction = test_T(models[i], periods[j].start, periods[j].end, patient_id)
             table[j][i] = (prediction.data_test, prediction.data_pred)
-    # RON COMMENTED:
-    """
+    
     with open('pickles/table' + str(patient_id) + '-' + str(start) + '-' + str(end), 'wb') as table_file:
         pickle.dump(table, table_file)
     with open('pickles/models' + str(patient_id) + "-" + str(start) + "-" + str(end), 'wb') as models_file:
         pickle.dump(models, models_file)
     with open('pickles/periods' + str(patient_id) + "-" + str(start) + "-" + str(end), 'wb') as periods_file:
         pickle.dump(periods, periods_file)
-    """
+
     return table, models, periods
 
 
@@ -687,8 +692,10 @@ FIG_WIDTH=18
 FIG_HEIGHT=20
 MARGIN=10
 
+enableSignle_mu = True
+enableProportionalNoise = True
 # run simulator:
-simulator()
+simulator(enableSignle_mu, enableProportionalNoise)
 
 # run algorithm:
 
