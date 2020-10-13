@@ -527,11 +527,11 @@ def popular_model(table, models, periods):
 
 
 Model_Periods = namedtuple('Model_Periods', ['model', 'model_periods'])
-
+Model = namedtuple('Model',
+                       ['T', 'D', 'start_train_point', 'end_train_point', 'patient_id', 'reg_method', 'scaler'])
 
 def estimate_T(start_train_point, end_train_point, patient_id, reg_method):
-    Model = namedtuple('Model',
-                       ['T', 'D', 'start_train_point', 'end_train_point', 'patient_id', 'reg_method', 'scaler'])
+
     D = np.array([[0], [0], [0]])
 
     reg1 = reg2 = reg3 = None
