@@ -27,78 +27,90 @@ import scipy.stats
 from collections import namedtuple
 
 
-def print_prediction_results(prediction):
-    print("*******************************************************************************************************")
-    print("Estimation Method: ", prediction.model.reg_method)
-    print("T=\n", prediction.model.T)
-    print("D=\n", prediction.model.D)
-    print("Training Period: [%s, %s]" % (prediction.model.start_train_point, prediction.model.end_train_point))
-    print("Training based on %s data" % (prediction.model.patient_id))
+def print_prediction_results(predictions):
+    if (type(predictions) != list):
+        predictions = [[predictions]]
 
-    print("")
-    print("Testing the model based on %s data" % (prediction.patient_id))
-    print('Mean squared error: %.2f'
-          % mean_squared_error(prediction.data_test, prediction.data_pred))
-    # The coefficient of determination: 1 is perfect prediction
-    print('Coefficient of determination: %.2f'
-          % r2_score(prediction.data_test, prediction.data_pred))
-    print("The Noise Is White: ", white_noise(prediction.data_test, prediction.data_pred))
+    start = np.inf
+    end = -np.inf
+    for prediction_one_model in predictions:
+        for prediction in prediction_one_model:
+            start = min(start, prediction.time[0])
+            end = max(end, prediction.time[-1])
+    time_total, bp_original_total = bp(start, end, predictions[0][0].patient_id, 0, 0)
+    time_total, hr_original_total = hr(start, end, predictions[0][0].patient_id, 0, 0)
+    time_total, rr_original_total = rr(start, end, predictions[0][0].patient_id, 0, 0)
 
-    fig, ax1 = plt.subplots(figsize=(18, 3))
-    ax1.set_title('Heart Rate')
-    ax1.set_xlabel('Time [sec]')
-    ax1.set_ylabel('Heart Rate [bpm]')
-    ax1.plot(prediction.time, prediction.data_test[0], linewidth=3)
-    ax1.plot(prediction.time, prediction.data_pred[0], linewidth=3)
-    ax1.legend(['Data', 'Predicted'], loc='best')
+    error_color = 'gray'
+    original_color = 'black'
+    prediction_colors = ['C0', 'C1', 'C2', 'C3', 'C4']
 
-    ax2 = ax1.twinx()
-    color = 'tab:gray'
-    ax2.set_ylabel('Error [bpm]', color=color)
-    ax2.plot(prediction.time, prediction.data_test[0] - prediction.data_pred[0], '--', color=color, linewidth=0.5)
-    ax2.tick_params(axis='y', labelcolor=color)
+    fig, ax = plt.subplots(nrows=3, ncols=1, figsize=(24, 16))
+
+    ax[0].set_title('Heart Rate')
+    ax[0].set_xlabel('Time [sec]')
+    ax[0].set_ylabel('Heart Rate [bpm]')
+    ax[0].plot(time_total, hr_original_total, linewidth=2, color=original_color, label='Data')
+    ax2_hr = ax[0].twinx()
+    ax2_hr.set_ylabel('Error [bpm]', color=error_color)
+    ax2_hr.tick_params(axis='y', labelcolor=error_color)
+
+    ax[1].set_title('Systolic Blood Pressure')
+    ax[1].set_xlabel('Time [sec]')
+    ax[1].set_ylabel('Systolic Blood Pressure [mmHg]')
+    ax[1].plot(time_total, bp_original_total, linewidth=2, color=original_color, label='Data')
+    ax2_bp = ax[1].twinx()
+    ax2_bp.set_ylabel('Error [mmHg]', color=error_color)
+    ax2_bp.tick_params(axis='y', labelcolor=error_color)
+
+    ax[2].set_title('Respiration Rate')
+    ax[2].set_xlabel('Time [sec]')
+    ax[2].set_ylabel('Respiration Rate [Hz]')
+    ax[2].plot(time_total, rr_original_total, linewidth=2, color=original_color, label='Data')
+    ax2_rr = ax[2].twinx()
+    ax2_rr.set_ylabel('Error [Hz]', color=error_color)
+    ax2_rr.tick_params(axis='y', labelcolor=error_color)
+
+    model_index = 0
+    for prediction_one_model in predictions:
+        model_index = model_index + 1
+        print("*******************************************************************************************************")
+        print("Model Number: ", model_index)
+        print("Estimation Method: ", prediction.model.reg_method)
+        print("T=\n", prediction.model.T)
+        print("D=\n", prediction.model.D)
+        print("Training Period: [%s, %s]" % (prediction.model.start_train_point, prediction.model.end_train_point))
+        print("Training based on %s data" % (prediction.model.patient_id))
+        for prediction in prediction_one_model:
+            print("Testing the model based on %s data on the period [%s, %s]" % (
+            prediction.patient_id, prediction.time[0], prediction.time[-1]))
+            print('Mean squared error: %.2f'
+                  % mean_squared_error(prediction.data_test, prediction.data_pred))
+            # The coefficient of determination: 1 is perfect prediction
+            print('Coefficient of determination: %.2f'
+                  % r2_score(prediction.data_test, prediction.data_pred))
+            print("The Noise Is White: ", white_noise(prediction.data_test, prediction.data_pred))
+
+            ax[0].plot(prediction.time, prediction.data_pred[0], linewidth=2, color=prediction_colors[model_index - 1],
+                       label="Predicted by model " + str(model_index))
+            ax2_hr.plot(prediction.time, prediction.data_test[0] - prediction.data_pred[0], '--', color=error_color,
+                        linewidth=0.5)
+
+            ax[1].plot(prediction.time, prediction.data_pred[1], linewidth=2, color=prediction_colors[model_index - 1],
+                       label="Predicted by model " + str(model_index))
+            ax2_bp.plot(prediction.time, prediction.data_test[1] - prediction.data_pred[1], ':', color=error_color,
+                        linewidth=0.5)
+
+            ax[2].plot(prediction.time, prediction.data_pred[2], linewidth=2, color=prediction_colors[model_index - 1],
+                       label="Predicted by model " + str(model_index))
+            ax2_rr.plot(prediction.time, prediction.data_test[2] - prediction.data_pred[2], '--', color=error_color,
+                        linewidth=0.5)
+        print("*******************************************************************************************************")
+
+    ax[0].legend(loc='best')
+    ax[1].legend(loc='best')
+    ax[2].legend(loc='best')
     plt.show()
-
-    fig, ax1 = plt.subplots(figsize=(18, 3))
-    ax1.set_title('Systolic Blood Pressure')
-    ax1.set_xlabel('Time [sec]')
-    ax1.set_ylabel('Systolic Blood Pressure [mmHg]')
-    ax1.plot(prediction.time, prediction.data_test[1], linewidth=3)
-    ax1.plot(prediction.time, prediction.data_pred[1], linewidth=3)
-    ax1.legend(['Data', 'Predicted'], loc='best')
-
-    ax2 = ax1.twinx()
-    color = 'tab:gray'
-    ax2.set_ylabel('Error [mmHg]', color=color)
-    ax2.plot(prediction.time, prediction.data_test[1] - prediction.data_pred[1], ':', color=color, linewidth=0.5)
-    ax2.tick_params(axis='y', labelcolor=color)
-    plt.show()
-
-    fig, ax1 = plt.subplots(figsize=(18, 3))
-    ax1.set_title('Respiration Rate')
-    ax1.set_xlabel('Time [sec]')
-    ax1.set_ylabel('Respiration Rate [Hz]')
-    ax1.plot(prediction.time, prediction.data_test[2], linewidth=3)
-    ax1.plot(prediction.time, prediction.data_pred[2], linewidth=3)
-    ax1.legend(['Data', 'Predicted'], loc='best')
-
-    ax2 = ax1.twinx()
-    color = 'tab:gray'
-    ax2.set_ylabel('Error [Hz]', color=color)
-    ax2.plot(prediction.time, prediction.data_test[2] - prediction.data_pred[2], '--', color=color, linewidth=0.5)
-    ax2.tick_params(axis='y', labelcolor=color)
-    plt.show()
-
-    '''
-    #autocorelation graphs
-
-    #plot_acf(prediction.data_test[0] - prediction.data_pred[0], lags=20, alpha=0.1)
-    #plot_acf(prediction.data_test[1] - prediction.data_pred[1], lags=20, alpha=0.1)
-    #plot_acf(prediction.data_test[2] - prediction.data_pred[2], lags=20, alpha=0.1)
-    '''
-
-    print("*******************************************************************************************************")
-
 
 def rr(start, end, patient_id, print1, print2):
     if patient_id == 'simulator':
@@ -668,6 +680,7 @@ def split_to_models(start, end, patient_id):
             results = []
             for i in range(3):
                 table, periods, popular_model_, model_periods = popular_model(table, models, periods)
+                table = clean_table(table, models, periods)
                 if len(model_periods) == 0:
                     break;
                 else:
@@ -681,9 +694,15 @@ def split_to_models(start, end, patient_id):
                 best_rank = result_rank
                 best_results = results
 
+    prediction_results = []
     for result in best_results:
+        prediction_results_one_model = []
         for period in result.model_periods:
-            print_prediction_results(test_T(result.model, period.start, period.end, patient_id))
+            prediction = test_T(result.model, period.start, period.end, patient_id)
+            prediction_results_one_model.append(prediction)
+            # print_prediction_results(prediction)
+        prediction_results.append(prediction_results_one_model)
+    print_prediction_results(prediction_results)
 
 
 # configs:
